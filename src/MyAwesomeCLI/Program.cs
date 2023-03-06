@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-using MyAwesomeCLI;
+using MyAwesomeCLI.Commands;
+using MyAwesomeCLI.Infra;
 
 using Spectre.Console.Cli;
 
@@ -18,7 +19,7 @@ app.Configure(app =>
     {
         context.AddCommand<CreateContextCommand>("create")
             .WithDescription("this commands create a new context for our awesome app")
-            .WithExample(new[] { "--name", "test-context", "--user-key", "test-user", "--user-secret", "test-secret" });
+            .WithExample(new[] { "context", "create", "--name", "test-context", "--user-key", "test-user", "--user-secret", "test-secret" });
     });
 });
 

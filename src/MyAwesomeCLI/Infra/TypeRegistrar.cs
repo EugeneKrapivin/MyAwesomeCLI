@@ -2,7 +2,7 @@
 
 using Spectre.Console.Cli;
 
-namespace MyAwesomeCLI;
+namespace MyAwesomeCLI.Infra;
 
 public sealed class TypeRegistrar : ITypeRegistrar
 {

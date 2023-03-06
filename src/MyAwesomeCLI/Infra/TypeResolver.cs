@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyAwesomeCLI;
+namespace MyAwesomeCLI.Infra;
 
 public sealed class TypeResolver : ITypeResolver, IDisposable
 {
