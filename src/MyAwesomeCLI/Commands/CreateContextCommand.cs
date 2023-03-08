@@ -5,6 +5,7 @@ using System.Text.Json;
 using Spectre.Console;
 using MediatR;
 using MyAwesomeCLI.Handlers;
+using ValidationResult = Spectre.Console.ValidationResult;
 
 namespace MyAwesomeCLI.Commands;
 
@@ -29,6 +30,7 @@ public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateCont
     {
         _mediator = mediator;
     }
+
     public override async Task<int> ExecuteAsync(CommandContext commandContext, CreateContextArgument settings) 
         => await _mediator.Send(new CreateContextRequest(settings.Name, settings.UserKey, settings.Secret))
             .ToAsync()
@@ -63,6 +65,18 @@ public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateCont
 
                     return -1;
                 });
+
+    public override ValidationResult Validate(CommandContext context, CreateContextArgument settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.Name)) 
+            ValidationResult.Error("context name must not be null or empty");
+        if (string.IsNullOrWhiteSpace(settings.UserKey))
+            ValidationResult.Error("context user key must not be null or empty");
+        if (string.IsNullOrWhiteSpace(settings.Secret))
+            ValidationResult.Error("context user secret must not be null or empty");
+
+        return ValidationResult.Success();
+    }
 
     public class CreateContextArgument : CommandSettings
     {
