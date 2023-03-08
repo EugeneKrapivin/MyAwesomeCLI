@@ -1,13 +1,18 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
 using MyAwesomeCLI.Commands;
+using MyAwesomeCLI.Handlers;
 using MyAwesomeCLI.Infra;
+using MyAwesomeCLI.Services.ContextService;
 
 using Spectre.Console.Cli;
 
 var services = new ServiceCollection();
 
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
+
+services.AddSingleton<IContextService, FileSystemContextService>();
+services.AddSingleton<IExchangeCredentials, CredentialsExchangeService>();
 
 var registrar = new TypeRegistrar(services);
 

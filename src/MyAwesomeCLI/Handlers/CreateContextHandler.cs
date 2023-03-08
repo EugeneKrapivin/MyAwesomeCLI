@@ -1,17 +1,7 @@
 ﻿using LanguageExt;
 
 using MediatR;
-
-using MyAwesomeCLI.Commands;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-
-using static System.Environment;
+using MyAwesomeCLI.Services.ContextService;
 
 namespace MyAwesomeCLI.Handlers;
 
@@ -23,39 +13,26 @@ public record CreateContextRequest(string Name, string UserKey, string Secret) :
 internal class CreateContextHandler 
     : IRequestHandler<CreateContextRequest, Either<CreateContextErrorResponse, CreateContextSuccessResponse>>
 {
+    private readonly IContextService _contextService;
+    private readonly IExchangeCredentials _exchangeCredentials;
+
+    public CreateContextHandler(IContextService contextService, IExchangeCredentials exchangeCredentials)
+    {
+        _contextService = contextService;
+        _exchangeCredentials = exchangeCredentials;
+    }
+
     public async Task<Either<CreateContextErrorResponse, CreateContextSuccessResponse>> Handle(CreateContextRequest request, CancellationToken cancellationToken)
     {
-        const string cliFolder = ".awesome_cli";
-        const string configFileName = ".awesome_cli.config";
-        var targetFolder = Path.Combine(GetFolderPath(SpecialFolder.UserProfile), cliFolder);
-        var targetFile = Path.Combine(targetFolder, configFileName);
+        var creds = await _exchangeCredentials.GetCredentialsAsync(request.UserKey, request.Secret);
 
-        var dirInfo = Directory.CreateDirectory(targetFolder); // ensure the directory exists
-        if (!dirInfo.Exists)
-            return new CreateContextErrorResponse("Target directory does not exist", targetFolder);
-
-        var cliContext = new CliContext
-        {
-            Name = request.Name,
-            UserKey = request.UserKey,
-            Secret = request.Secret
-        };
-
-        var cliContextCollection = new ContextModel
-        {
-            CurrentContext = cliContext.Name,
-            DefinedContexts = { { cliContext } }
-        };
-
-        var content = JsonSerializer.Serialize(cliContextCollection, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-            WriteIndented = true
-        });
-
-        // probably should add some protection here as well
-        await File.WriteAllTextAsync(targetFile, content, cancellationToken);
-
-        return new CreateContextSuccessResponse(cliContext, targetFile);
+        return await _contextService.AddContextAsync(request.Name, creds)
+            .ToAsync()
+            .Case switch
+            {
+                (CliContext ctx, string path) => new CreateContextSuccessResponse(ctx, path),
+                (string error, string path) => new CreateContextErrorResponse(error, path),
+                _ => throw new NotImplementedException()
+            };
     }
 }

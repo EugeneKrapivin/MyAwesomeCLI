@@ -2,7 +2,7 @@
   "profiles": {
     "MyAwesomeCLI": {
       "commandName": "Project",
-      "commandLineArgs": "context create --name test-context --user-key test-user --user-secret test-secret"
+      "commandLineArgs": "context create --name test-name --user-key test-user --user-secret test-secret"
     }
   }
 }

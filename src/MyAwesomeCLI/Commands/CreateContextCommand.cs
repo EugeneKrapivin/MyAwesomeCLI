@@ -9,19 +9,6 @@ using ValidationResult = Spectre.Console.ValidationResult;
 
 namespace MyAwesomeCLI.Commands;
 
-public class ContextModel
-{
-    public string CurrentContext { get; set; } = string.Empty;
-    public List<CliContext> DefinedContexts { get; set; } = new();
-}
-
-public class CliContext
-{
-    public required string Name { get; set; }
-    public required string UserKey { get; set; }
-    public required string Secret { get; set; }
-}
-
 public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateContextArgument>
 {
     private readonly IMediator _mediator;
@@ -31,8 +18,8 @@ public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateCont
         _mediator = mediator;
     }
 
-    public override async Task<int> ExecuteAsync(CommandContext commandContext, CreateContextArgument settings) 
-        => await _mediator.Send(new CreateContextRequest(settings.Name, settings.UserKey, settings.Secret))
+    public override async Task<int> ExecuteAsync(CommandContext commandContext, CreateContextArgument settings)
+        => await _mediator.Send(new CreateContextRequest(settings.Name!, settings.UserKey!, settings.Secret!))
             .ToAsync()
             .Match(
                 success =>
@@ -42,8 +29,9 @@ public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateCont
                     AnsiConsole.MarkupLineInterpolated($"Created a new CLI context [green bold]{cliContext.Name}[/]");
                     AnsiConsole.Write(new Table()
                         .AddColumns("property", "value")
-                        .AddRow("userkey", settings.UserKey)
-                        .AddRow("secret", settings.Secret)); // probably shouldn't write it back
+                        .AddRow("name", settings.Name!)
+                        .AddRow("userkey", settings.UserKey!)
+                        .AddRow("at", cliContext.AccessToken));
                     AnsiConsole.Write("created at: ");
                     AnsiConsole.Write(new TextPath(targetFile).RootStyle(new Style(foreground: Color.Red))
                         .SeparatorStyle(new Style(foreground: Color.Green))
@@ -68,12 +56,14 @@ public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateCont
 
     public override ValidationResult Validate(CommandContext context, CreateContextArgument settings)
     {
-        if (string.IsNullOrWhiteSpace(settings.Name)) 
-            ValidationResult.Error("context name must not be null or empty");
+        if (settings.Name == "this-is-a-test-string-to-fail-the-validation")
+            return ValidationResult.Error("context name must not be \"this-is-a-test-string-to-fail-the-validation\"");
+        if (string.IsNullOrWhiteSpace(settings.Name))
+            return ValidationResult.Error("context name must not be null or empty");
         if (string.IsNullOrWhiteSpace(settings.UserKey))
-            ValidationResult.Error("context user key must not be null or empty");
+            return ValidationResult.Error("context user key must not be null or empty");
         if (string.IsNullOrWhiteSpace(settings.Secret))
-            ValidationResult.Error("context user secret must not be null or empty");
+            return ValidationResult.Error("context user secret must not be null or empty");
 
         return ValidationResult.Success();
     }
@@ -82,14 +72,14 @@ public class CreateContextCommand : AsyncCommand<CreateContextCommand.CreateCont
     {
         [Required]
         [CommandOption("-n|--name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [Required]
         [CommandOption("-u|--user-key")]
-        public string UserKey { get; set; }
+        public string? UserKey { get; set; }
 
         [Required]
         [CommandOption("-s|--user-secret")]
-        public string Secret { get; set; }
+        public string? Secret { get; set; }
     }
 }
